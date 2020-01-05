@@ -3,7 +3,11 @@
 |![fitting_image1](https://github.com/ajioka-fumito/XRD_Fitting/blob/master/README/110.png)|![fitting_image2](https://github.com/ajioka-fumito/XRD_Fitting/blob/master/README/222.png)|
 # Summary
 本モジュールではXRD測定によって得られたヒストグラムを２つの関数の重ねわせにより表現し,K&alpha;1に起因するヒストグラムのみを取りだすことを目的としている.  
-構成要素は１つのMain関数と３つのSubクラスである.  
+
+これは y = a<sub>k&alpha;1</sub> * exp ( - ( x - b<sub>k&alpha;1</sub> / c<sub>k&alpha;1</sub> ) <sup>2</sup> ) + a<sub>k&alpha;2</sub> * exp ( - ( x - b<sub>k&alpha;2</sub> / c<sub>k&alpha;2</sub> ) <sup>2</sup> )のパラメーターを最適化しているとみなすことができる.そのため本モジュールでは上記6つのパラメーター及び測定時のノイズのフィッティングを行っている.
+
+構成要素は１つのMain関数と３つのSubクラスである. 
+ 
 スペクトルフィッティングは初期値を解析解に近い値で設定する必要があるため初期値の設定に工夫が要求される.そのため本モジュール化では初期値の自動設定を含めた実装を行った.
 
 
