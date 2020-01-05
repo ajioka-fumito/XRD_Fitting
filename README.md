@@ -1,3 +1,4 @@
+![fitting_image1](https://github.com/ajioka-fumito/XRD_Fitting/blob/master/README/110.png)![fitting_image2](https://github.com/ajioka-fumito/XRD_Fitting/blob/master/README/222.png)
 # Summary
 本モジュールではXRD測定によって得られたヒストグラムを２つの関数の重ねわせにより表現し,K&alpha;1に起因するヒストグラムのみを取りだすことを目的としている.  
 構成要素は１つのMain関数と３つのSubクラスである.  
