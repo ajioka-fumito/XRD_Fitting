@@ -4,6 +4,8 @@
 # Summary
 本モジュールではXRD測定によって得られたヒストグラムを２つの関数の重ねわせにより表現し,K&alpha;1に起因するヒストグラムのみを取りだすことを目的としている.  
 
+!!!! voigt function 実装中　
+
 これは y = a<sub>k&alpha;1</sub> * exp ( - ( x - b<sub>k&alpha;1</sub> / c<sub>k&alpha;1</sub> ) <sup>2</sup> ) + a<sub>k&alpha;2</sub> * exp ( - ( x - b<sub>k&alpha;2</sub> / c<sub>k&alpha;2</sub> ) <sup>2</sup> )のパラメーターを最適化しているとみなすことができる.そのため本モジュールでは上記6つのパラメーター及び測定時のノイズのフィッティングを行っている.
 
 構成要素は１つのMain関数と３つのSubクラスである. 
