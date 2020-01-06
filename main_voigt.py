@@ -56,7 +56,10 @@ class FittingFunctions:
         """
         z = ((x-params[1])+1j*params[2]) /(params[3]*np.sqrt(2.0*np.pi))
         w = wofz(z)
-        v = params[0]*w.real / (params[3] * np.sqrt(2.0))
+        v = (w.real / (params[3] * np.sqrt(2.0)))
+        v = v/np.max(v)
+        v = params[0]*v
+
         return v
 
     def voigt_plus(self,x,*params):
@@ -70,10 +73,11 @@ class FittingFunctions:
 class Visualize:
     def plot(self):
         predict = self.voigt_plus(self.x,*self.popt)
+        print(self.popt)
         plt.plot(self.x,self.t)
         plt.plot(self.x,predict)
         for i in range(2):
-            predict = self.voigt(self.x,*self.popt[1+3*i:5+3*i])
+            predict = self.voigt(self.x,*self.popt[1+4*i:5+4*i])
             plt.fill_between(self.x,predict,facecolor=cm.rainbow(i/2, alpha=0.6))
         plt.savefig("./data/output/figs/"+self.orientation+".png")
         plt.clf()
@@ -93,8 +97,8 @@ class Main(FittingFunctions,SubFunctions,Visualize):
         self.noise = self.Noise()
         # init params for curve fitting
         self.init_params = [self.noise,
-                            0.8*self.t_max,self.x1,0.02,0.01,
-                            0.8*0.4*self.t_max,self.x1+self.delta_x,0.02*1.1,0.01*1.1]
+                            0.6*self.t_max,self.x1,0.01,0.001,
+                            0.6*0.4*self.t_max,self.x1+self.delta_x,0.01*1.5,0.01]
         
         # fitted gauss params 
         self.popt = self.fitting()
@@ -105,9 +109,10 @@ class Main(FittingFunctions,SubFunctions,Visualize):
 
     def out(self,filename):
         predict = self.voigt(self.x,*self.popt[1:5])
-        
-        df1 = pd.DataFrame({"noise":[self.popt[0]],"a_ka1":[self.popt[1]],"b_ka2":[self.popt[2]],"c_ka2":[self.popt[3]],
-                            "2theta":[self.popt[2]],"FWHM":[2*np.log(2)*self.popt[3]]})
+        f_g = 2*self.popt[4]*np.sqrt(2*np.log(2))
+        f_l = 2*self.popt[3]
+        df1 = pd.DataFrame({"noise":[self.popt[0]],"h":[self.popt[1]],"x0":[self.popt[2]],"ganma":[self.popt[3]],"sigma":[self.popt[4]],
+                            "2theta":[self.popt[2]],"FWHM":[0.5346*f_l+np.sqrt(0.2166*f_l**2+f_g)]})
 
         df2 = pd.DataFrame({"thetas":self.x,"intensity":predict})
         df  = pd.concat([df1,df2],axis=1)
@@ -123,4 +128,3 @@ if __name__ == "__main__":
         ins.plot()
         # to csv
         ins.out("./data/output/"+orientation+".csv")
-

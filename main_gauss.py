@@ -81,6 +81,7 @@ class Visualize:
         for i in range(2):
             predict = self.gauss(self.x,*self.popt[1+3*i:4+3*i])
             plt.fill_between(self.x,predict,facecolor=cm.rainbow(i/2, alpha=0.6))
+            
         plt.savefig("./data/output/figs/"+self.orientation+".png")
         plt.clf()
 
