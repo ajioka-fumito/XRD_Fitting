@@ -41,6 +41,17 @@ class SubFunctions:
         noise2 = np.mean(self.t[len(self.t)-51:len(self.t)-1])
         return (noise1+noise2)/2
 
+    def smooth(self):
+        fft = np.fft.fft(self.t)
+        nor = max(fft)
+        fft = fft/nor
+        fft = np.where(abs(fft)<0.05,0,fft)
+        t_smooth = np.fft.ifft(fft*nor)
+        plt.plot(self.x,self.t)
+        plt.plot(self.x,t_smooth)
+        plt.show()
+        return abs(t_smooth)
+
 class FittingFunctions:
     """
     functions for fitting
@@ -83,6 +94,7 @@ class Main(FittingFunctions,SubFunctions,Visualize):
         self.x,self.t = self.data[orientation+"theta"],self.data[orientation+"intensity"]
         # caluculated params
         self.x1,self.t_max = self.max_intensity()
+        self.t = self.smooth()
         self.delta_x = self.delta()*2
         self.noise = self.Noise()
         # init params for curve fitting
@@ -105,7 +117,7 @@ class Main(FittingFunctions,SubFunctions,Visualize):
 
     def out(self,filename):
         predict = self.lorentz(self.x,*self.popt[1:4])
-        predict = predict/np.max(predict)
+
         df1 = pd.DataFrame({"noise":[self.popt[0]],"h":[self.popt[1]],"x0":[self.popt[2]],"ganma":[self.popt[3]],
                             "2theta":[self.popt[2]],"FWHM":2*self.popt[3]})
         
