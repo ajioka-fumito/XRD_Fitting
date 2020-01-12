@@ -7,6 +7,7 @@ from scipy import interpolate
 
 
 class SubFunctions:
+    # sector 1
     def K(self):
         theta = np.array(self.params["2theta"])/2
         theta = np.pi*theta/180
@@ -20,7 +21,8 @@ class SubFunctions:
         delta_theta = np.pi*delta_theta/180
         delta_K = 2*np.cos(theta)*delta_theta/self.lam # 掛ける２すべき？
         return delta_K
-
+    
+    #sector 2
     def H2(self):
         H2 = []
         for orientation in self.orientations:
@@ -30,6 +32,7 @@ class SubFunctions:
             H2.append(h2)
         return np.array(H2)
     
+    # sector 3
     def alpha(self):
         x = self.H2
         coef = []
@@ -63,7 +66,10 @@ class SubFunctions:
             fft_sp = interpolate.splev(np.arange(51),tck)
             A_L[orientation] = fft_sp
             plt.plot(np.arange(51),fft_sp)
-        plt.savefig(self.dir+"/figs/ALvsL.png")
+
+        if os.path.exists(self.out_dir)!=1:
+            os.makedirs(self.out_dir)
+        plt.savefig(self.out_dir+"/ALvsL.png")
         plt.clf()
         return A_L
 
@@ -75,34 +81,39 @@ class SubFunctions:
             if i%2==0:
                 ls_b.append(b)
                 ls_c.append(c)
-        plt.savefig(self.dir+"/figs/ALvsK2C.png")
+
+        plt.savefig(self.out_dir+"/ALvsK2C.png")
         plt.clf()
         return np.array(ls_c),np.array(ls_b) 
     
     def Re(self):
-        slp,inter = np.polyfit(self.ln_L[12:16],self.X_L_L2[12:16],1)
+        slp,inter = np.polyfit(self.ln_L[4:8],self.X_L_L2[4:8],1)
+
         plt.scatter(self.ln_L,self.X_L_L2)
-        plt.scatter(self.ln_L[12:16],self.X_L_L2[12:16])
+        plt.scatter(self.ln_L[4:8],self.X_L_L2[4:8])
         plt.plot(np.arange(0,4,0.01),slp*np.arange(0,4,0.01)+inter)
-        plt.ylim(-0.0035,0)
-        plt.savefig(self.dir+"/figs/X_L_L2vslnL.png")
+        plt.ylim(-0.0014,0)
+        plt.savefig(self.out_dir+"/X_L_L2vslnL.png")
+        plt.clf()
         return slp,inter
 
 
     def D(self):
-        a,b = np.polyfit(np.arange(2,10,2),self.As_L[0:4],1)
-        plt.scatter(np.arange(2,10,2),self.As_L[0:4])
+        a,b = np.polyfit(np.arange(2,10,2),self.As_L[1:5],1)
+
+        plt.scatter(np.arange(2,10,2),self.As_L[1:5])
         plt.scatter(np.arange(2,51,2),self.As_L)
         plt.plot(np.arange(2,10,2),a*np.arange(2,10,2)+b)
-        plt.savefig(self.dir+"/figs/AsLvsL.png")
+        plt.savefig(self.out_dir+"/AsLvsL.png")
         plt.clf()
         return -b/a
 
 
 class Main(SubFunctions):
-    def __init__(self,predict_dir,orientations,remove_orientations,ka_lambda,C_h00):
+    def __init__(self,predict_dir,output_dir,orientations,remove_orientations,ka_lambda,C_h00):
         super().__init__()
         self.dir = predict_dir
+        self.out_dir = output_dir
         self.orientations = orientations 
         self.remove_orientation(remove_orientations)
         self.crete_data()
@@ -146,7 +157,7 @@ class Main(SubFunctions):
         # sector 6 calculate D
         self.D = self.D() # ok
         print("D:",self.D)
-        print("rho:",self.rho)
+        print("rho:","{:.3e}".format(self.rho))
         print("M:",self.M)
         print("q:",self.q)
     
@@ -176,11 +187,13 @@ class Main(SubFunctions):
 if __name__ == "__main__":
 
     predict_dir = "./data/fitting/output/predict/lorentz"
+    output_dir = "./data/modified_WA/output/graphs"
     # ["110","200","211","220","310","222"]
     orientations = ["110","200","211","220","310","222"]
     remove_orientations = ["110"]
     
     ins = Main(predict_dir = predict_dir,
+               output_dir = output_dir,
                orientations = orientations,
                remove_orientations = remove_orientations,
                ka_lambda = 0.070931,

@@ -11,7 +11,7 @@ class SubFunctions:
         Caluculate the peak of ka1
         the angle corresponding to the maxmun intensity
         """
-        idx = np.argmax(self.t)
+        idx = np.argmax(np.array(self.t))
         return self.x[idx],self.t[idx]
 
     def smooth(self):
@@ -158,14 +158,16 @@ class Main(SubFunctions,FittingFunctions):
         self.output_dir = output_dir
         self.data = pd.read_csv(path)
         self.orientation = orientation
-        self.x,self.t = self.data[orientation+"theta"],self.data[orientation+"intensity"]
+        self.x,self.t = self.data[orientation+"theta"][:1001],self.data[orientation+"intensity"][:1001]
         if (len(self.x)==0 or len(self.t)==0):
             print("read file is enmpy or wrong path")
             exit()
 
         # caluculated params
         self.x1,self.t_max = self.max_intensity()
+        """
         self.smooth()
+        """
         self.delta_x = 2*self.delta() # delta() return delta theta in bragg 
         self.noise = self.Noise()
 
@@ -173,9 +175,6 @@ class Main(SubFunctions,FittingFunctions):
         self.init_params = self.create_init_params()
         # fitted gauss params 
         self.popt = self.fitting()
-        print(self.popt)
-
-
 
     def fitting(self):
         popt,_ = curve_fit(self.stack_funcs,self.x,self.t,p0= self.init_params)
