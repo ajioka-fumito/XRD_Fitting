@@ -149,7 +149,7 @@ class Visualize:
         plt.clf()
 
 class Main(SubFunctions,FittingFunctions):
-    def __init__(self,path,orientation,kalpha,function,output_dir):
+    def __init__(self,path,file_name,orientation,kalpha,function,output_dir):
         # constant
         self.ka1, self.ka2 = kalpha # dim:angstrom
         self.function = function
@@ -158,7 +158,7 @@ class Main(SubFunctions,FittingFunctions):
         self.output_dir = output_dir
         self.data = pd.read_csv(path)
         self.orientation = orientation
-        self.x,self.t = self.data[orientation+"theta"][:1001],self.data[orientation+"intensity"][:1001]
+        self.x,self.t = self.data[self.orientation+"theta"][:1001],self.data[self.orientation+"intensity"][:1001]
         if (len(self.x)==0 or len(self.t)==0):
             print("read file is enmpy or wrong path")
             exit()
@@ -204,11 +204,11 @@ class Main(SubFunctions,FittingFunctions):
             exit()
         df2 = pd.DataFrame({"thetas":self.x,"intensity":predict})
         df  = pd.concat([df1,df2],axis=1)
-        df.to_csv(self.output_dir+"/"+orientation+".csv",index=None)
+        df.to_csv(self.output_dir+"/"+self.orientation+".csv",index=None)
         
         plt.plot(self.x,self.t-self.noise,color="darkgreen")
         plt.fill_between(self.x,predict,color="purple")
-        plt.savefig(self.output_dir+"/figs/"+orientation+".png")
+        plt.savefig(self.output_dir+"/figs/"+self.orientation+".png")
         plt.clf()
 
 if __name__ == "__main__":
@@ -226,6 +226,7 @@ if __name__ == "__main__":
     for orientation in orientations:
         # check fitting 
         ins = Main(path="./data/fitting/input/"+file_name,
+                   file_name=file_name,
                    orientation = orientation, kalpha=ka, function=function,
                    output_dir = output_dir)
         # to csv
