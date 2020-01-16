@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate 
-
+from scipy import optimize
 
 class SubFunctions:
     # sector 1
@@ -72,6 +72,11 @@ class SubFunctions:
         plt.savefig(self.out_dir+"/ALvsL.png")
         plt.clf()
         return A_L
+
+    def func2(self,param,x,y):
+        residual = y - (param[0]*x**2 + param[1]*x + param[2])
+        return residual
+
 
     def fffit(self):
         ls_b,ls_c = [],[]
@@ -142,7 +147,9 @@ class Main(SubFunctions):
 
         # sector 5 calculate AsL and X_L
         self.K2C = self.K**2*self.C_bar
-        self.lnAs_L,self.X_L = self.fffit() # correspond L (0~50)  
+        self.lnAs_L,self.X_L = self.fffit() # correspond L (0~50)
+        print(self.lnAs_L)
+        print(self.X_L)  
         self.As_L = np.exp(self.lnAs_L)
         self.ln_L = np.log(np.arange(2,51,2)) # correspond L (2~50,2)
         self.X_L_L2 = self.X_L/np.arange(2,51,2)**2
