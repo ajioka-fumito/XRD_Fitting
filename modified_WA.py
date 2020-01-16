@@ -87,6 +87,7 @@ class SubFunctions:
         return np.array(ls_c),np.array(ls_b) 
     
     def Re(self):
+        # ↓　ここでフィッテイングに用いる点を制御
         slp,inter = np.polyfit(self.ln_L[4:8],self.X_L_L2[4:8],1)
 
         plt.scatter(self.ln_L,self.X_L_L2)
