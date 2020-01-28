@@ -37,20 +37,23 @@ class SubFunctions:
         x = self.H2
         coef = []
         for i in range(0,10**4):
-            alpha = 2*i*10**(-7)
+            alpha = 5*i*10**(-7)
             y = (self.delta_K**2-alpha)/self.K**2
             now = np.corrcoef(x,y)[1][0]
             coef.append(now**2)
         idx = np.argmax(coef)
         alpha = 2*idx*10**(-7)
+        plt.scatter(np.arange(len(coef)),coef)
+        plt.savefig(self.out_dir+"/alpha_plt1.png")
+        plt.clf()
         return alpha
 
     def A_L(self):
         A_L = pd.DataFrame(columns=self.orientations)
         for orientation in self.orientations:
-            theta = np.array(self.fitting[orientation+"thetas"])
+            theta = np.array(self.fitting[orientation+"thetas"].dropna(how="all"))
             delta_theta = (2*(np.sin(theta[-1]*np.pi/360)-np.sin(theta[0]*np.pi/360))/self.lam)
-            intensity = self.fitting[orientation+"intensity"]/np.max(self.fitting[orientation+"intensity"])
+            intensity = self.fitting[orientation+"intensity"].dropna(how="all")/np.max(self.fitting[orientation+"intensity"].dropna(how="all"))
             # ここが必要か不明
             """
             idx = np.argmax(intensity)
@@ -93,10 +96,11 @@ class SubFunctions:
     
     def Re(self):
         # ↓　ここでフィッテイングに用いる点を制御
-        slp,inter = np.polyfit(self.ln_L[4:8],self.X_L_L2[4:8],1)
+        a,b = 10,14
+        slp,inter = np.polyfit(self.ln_L[a:b],self.X_L_L2[a:b],1)
 
         plt.scatter(self.ln_L,self.X_L_L2)
-        plt.scatter(self.ln_L[4:8],self.X_L_L2[4:8])
+        plt.scatter(self.ln_L[a:b],self.X_L_L2[a:b])
         plt.plot(np.arange(0,4,0.01),slp*np.arange(0,4,0.01)+inter)
         plt.ylim(-0.0014,0)
         plt.savefig(self.out_dir+"/X_L_L2vslnL.png")
@@ -105,9 +109,9 @@ class SubFunctions:
 
 
     def D(self):
-        a,b = np.polyfit(np.arange(2,10,2),self.As_L[1:5],1)
+        a,b = np.polyfit(np.arange(2,10,2),self.As_L[0:4],1)
 
-        plt.scatter(np.arange(2,10,2),self.As_L[1:5])
+        plt.scatter(np.arange(2,10,2),self.As_L[0:4])
         plt.scatter(np.arange(2,51,2),self.As_L)
         plt.plot(np.arange(2,10,2),a*np.arange(2,10,2)+b)
         plt.savefig(self.out_dir+"/AsLvsL.png")
@@ -137,6 +141,11 @@ class Main(SubFunctions):
         # sector 3 calculate q and C_bar
         self.alpha = self.alpha()
         self.beta_B,self.beta_A = np.polyfit(self.H2,(self.delta_K**2-self.alpha)/self.K**2,1)
+        plt.scatter(self.H2,(self.delta_K**2-self.alpha)/self.K**2)
+        plt.plot(self.H2,self.beta_B*self.H2+self.beta_A)
+        plt.ylim(-0.000005,0.0001)
+        plt.savefig(self.out_dir+"/alpha_plot2.png")
+        plt.clf()
         self.q = -self.beta_B/self.beta_A
         self.C_bar = self.C_h00*(1-self.q*self.H2)
         
@@ -148,8 +157,6 @@ class Main(SubFunctions):
         # sector 5 calculate AsL and X_L
         self.K2C = self.K**2*self.C_bar
         self.lnAs_L,self.X_L = self.fffit() # correspond L (0~50)
-        print(self.lnAs_L)
-        print(self.X_L)  
         self.As_L = np.exp(self.lnAs_L)
         self.ln_L = np.log(np.arange(2,51,2)) # correspond L (2~50,2)
         self.X_L_L2 = self.X_L/np.arange(2,51,2)**2
@@ -157,6 +164,7 @@ class Main(SubFunctions):
         # sector 6 calculate rho
         self.slp,self.inter = self.Re()
         self.Re = np.exp(-self.inter/self.slp)
+        # 
         self.Re_ = self.Re/7.39
         self.rho = 2*self.slp*10**20/(np.pi*2.5**2)
         self.M = self.rho**(0.5)*self.Re_*10**(-9)
@@ -197,13 +205,12 @@ if __name__ == "__main__":
     predict_dir = "./data/fitting/output/predict/lorentz"
     output_dir = "./data/modified_WA/output/graphs"
     # ["110","200","211","220","310","222"]
-    orientations = ["110","200","211","220","310","222"]
-    remove_orientations = ["110"]
-    
+    orientations = ["111","200","220","311","222","400"]
+    remove_orientations = ["111","200"]
+    # fcc = 0.316, bcc = 0.285
     ins = Main(predict_dir = predict_dir,
                output_dir = output_dir,
                orientations = orientations,
                remove_orientations = remove_orientations,
                ka_lambda = 0.070931,
-               C_h00 = 0.285)
-
+               C_h00 = 0.316)

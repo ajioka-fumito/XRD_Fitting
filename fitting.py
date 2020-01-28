@@ -18,12 +18,10 @@ class SubFunctions:
         fft = np.fft.fft(self.t)
         nor = np.max(fft)
         fft_nor = fft/nor
-        fft_nor = np.where(abs(fft_nor)<0.025,0,fft_nor)
-        self.t = abs(np.fft.ifft(nor*fft_nor))
-        """
-        plt.plot(self.x,self.t)
-        plt.show()
-        """
+        fft_nor = np.where(abs(fft_nor)<0.01,0,fft_nor)
+        t_nor = abs(np.fft.ifft(nor*fft_nor))
+        return t_nor
+
     def bragg(self,*params):
         """
         params = [lamda_ka1,lamda_ka2,theta1,delta]
@@ -48,9 +46,9 @@ class SubFunctions:
         return delta
 
     def Noise(self):
-        noise1 = np.mean(self.t[0:50])
-        noise2 = np.mean(self.t[len(self.t)-51:len(self.t)-1])
-        return np.min([np.min(noise1),np.min(noise2)])
+        noise = sorted(self.t)
+        noise = noise[:150]
+        return min(noise) 
 
     def create_init_params(self):
         
@@ -69,7 +67,7 @@ class SubFunctions:
             return params
 
         elif function == "voigt":
-            ganma,sigma = 0.005,0.00001
+            ganma,sigma = 0.05,0.01
             params = [self.noise,
                       0.8*self.t_max,self.x1,ganma,sigma,
                       0.8*0.4*self.t_max,self.x1+self.delta_x,ganma*1.3,sigma*1.3]
@@ -133,20 +131,7 @@ class FittingFunctions:
             print("input function does not exist.")
             exit()
 
-class Visualize:
-    def __init__(self):
-        pass
 
-    def plot(self):
-        predict = self.lorentz_plus(self.x,*self.popt)
-        plt.plot(self.x,self.t)
-        plt.plot(self.x,predict)
-        for i in range(2):
-            predict = self.lorentz(self.x,*self.popt[1+3*i:4+3*i])
-            plt.fill_between(self.x,predict,facecolor=cm.rainbow(i/2, alpha=0.6))
-            
-        plt.savefig("./data/fitting/output/figs/"+self.orientation+".png")
-        plt.clf()
 
 class Main(SubFunctions,FittingFunctions):
     def __init__(self,path,file_name,orientation,kalpha,function,output_dir):
@@ -158,7 +143,11 @@ class Main(SubFunctions,FittingFunctions):
         self.output_dir = output_dir
         self.data = pd.read_csv(path)
         self.orientation = orientation
-        self.x,self.t = self.data[self.orientation+"theta"][:1001],self.data[self.orientation+"intensity"][:1001]
+        self.x,self.t = self.data[self.orientation+"theta"],self.data[self.orientation+"intensity"]
+        self.x = self.x.dropna(how="all")
+        self.t = self.t.dropna(how="all")
+        self.t_nor = self.smooth()
+
         if (len(self.x)==0 or len(self.t)==0):
             print("read file is enmpy or wrong path")
             exit()
@@ -175,9 +164,9 @@ class Main(SubFunctions,FittingFunctions):
         self.init_params = self.create_init_params()
         # fitted gauss params 
         self.popt = self.fitting()
-
+        print("fiited_params:",self.popt)
     def fitting(self):
-        popt,_ = curve_fit(self.stack_funcs,self.x,self.t,p0= self.init_params)
+        popt,_ = curve_fit(self.stack_funcs,self.x,self.t_nor,p0= self.init_params)
         return popt
 
     def output(self):
@@ -186,15 +175,22 @@ class Main(SubFunctions,FittingFunctions):
             os.makedirs(self.output_dir)
             os.makedirs(self.output_dir+"/figs")
         if self.function == "gauss":
-            predict = self.gauss(self.x,self.popt[1:4])
+            predict1 = self.gauss(self.x,self.popt[1:4])
+            predict2 = self.gauss(self.x,self.popt[4:])
+            predict_all = self.stack_funcs(self.x,*self.popt)
             df1 = pd.DataFrame({"noise":[self.popt[0]],"a_ka1":[self.popt[1]],"b_ka2":[self.popt[2]],"c_ka2":[self.popt[3]],
                                 "2theta":[self.popt[2]],"FWHM":[2*np.log(2)*self.popt[3]]})
         elif self.function == "lorentz":
-            predict = self.lorentz(self.x,self.popt[1:4])
+            predict1 = self.lorentz(self.x,self.popt[1:4])
+            predict2 = self.lorentz(self.x,self.popt[4:])
+            predict_all = self.stack_funcs(self.x,*self.popt)
             df1 = pd.DataFrame({"noise":[self.popt[0]],"h":[self.popt[1]],"x0":[self.popt[2]],"ganma":[self.popt[3]],
                                 "2theta":[self.popt[2]],"FWHM":2*self.popt[3]})
+
         elif self.function == "voigt":
-            predict = self.voigt(self.x,self.popt[1:5])
+            predict1 = self.voigt(self.x,self.popt[1:5])
+            predict2 = self.voigt(self.x,self.popt[5:])
+            predict_all = self.stack_funcs(self.x,*self.popt)
             f_g = 2*self.popt[4]*np.sqrt(2*np.log(2))
             f_l = 2*self.popt[3]
             df1 = pd.DataFrame({"noise":[self.popt[0]],"h":[self.popt[1]],"x0":[self.popt[2]],"ganma":[self.popt[3]],"sigma":[self.popt[4]],
@@ -202,18 +198,21 @@ class Main(SubFunctions,FittingFunctions):
         else:
             print("input function does not exist.")
             exit()
-        df2 = pd.DataFrame({"thetas":self.x,"intensity":predict})
+        df2 = pd.DataFrame({"thetas":self.x,"intensity":predict1})
         df  = pd.concat([df1,df2],axis=1)
         df.to_csv(self.output_dir+"/"+self.orientation+".csv",index=None)
         
-        plt.plot(self.x,self.t-self.noise,color="darkgreen")
-        plt.fill_between(self.x,predict,color="purple")
+        plt.plot(self.x,self.t,color="darkgreen")
+        plt.plot(self.x,self.t_nor,color="yellow")
+        plt.plot(self.x,predict_all,color="red")
+        plt.fill_between(self.x,predict1,color="purple")
+        plt.fill_between(self.x,predict2,color="blue")
         plt.savefig(self.output_dir+"/figs/"+self.orientation+".png")
         plt.clf()
 
 if __name__ == "__main__":
     # initial params (you dont have to input)
-    orientations = ["110","200","211","220","310","222"]
+    orientations = ["111","200","220","311","222","400"]
 
     # initial params (you have to input)
     # file_name 
