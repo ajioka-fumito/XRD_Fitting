@@ -37,7 +37,7 @@ class SubFunctions:
         x = self.H2
         coef = []
         for i in range(0,10**4):
-            alpha = 5*i*10**(-7)
+            alpha = 2*i*10**(-7)
             y = (self.delta_K**2-alpha)/self.K**2
             now = np.corrcoef(x,y)[1][0]
             coef.append(now**2)
@@ -52,7 +52,7 @@ class SubFunctions:
         A_L = pd.DataFrame(columns=self.orientations)
         for orientation in self.orientations:
             theta = np.array(self.fitting[orientation+"thetas"].dropna(how="all"))
-            delta_theta = (2*(np.sin(theta[-1]*np.pi/360)-np.sin(theta[0]*np.pi/360))/self.lam)
+            delta_theta = 2*(np.sin(theta[-1]*np.pi/360)-np.sin(theta[0]*np.pi/360))/self.lam
             intensity = self.fitting[orientation+"intensity"].dropna(how="all")/np.max(self.fitting[orientation+"intensity"].dropna(how="all"))
             # ここが必要か不明
             """
@@ -133,7 +133,7 @@ class Main(SubFunctions):
         # sector 1 calculate K and delta_k
         self.lam = ka_lambda
         self.K,self.delta_K  = self.K(),self.delta_K()
-
+        print(self.K,self.delta_K)
         # sector 2 calculate H_2
         self.C_h00 = C_h00
         self.H2    = self.H2()
@@ -206,7 +206,7 @@ if __name__ == "__main__":
     output_dir = "./data/modified_WA/output/graphs"
     # ["110","200","211","220","310","222"]
     orientations = ["111","200","220","311","222","400"]
-    remove_orientations = ["111","200"]
+    remove_orientations = []
     # fcc = 0.316, bcc = 0.285
     ins = Main(predict_dir = predict_dir,
                output_dir = output_dir,
